@@ -1,0 +1,242 @@
+import requests
+import os
+from lxml import etree
+
+# name = '张学友'
+name = input('请输入歌手姓名：')
+filepath = 'D://Music//' + name
+
+
+# 根据歌手名获取歌手id
+def get_artistid_from_name(name):
+    url = "https://kuwo.cn/api/www/search/searchMusicBykeyWord"
+    headers = {
+        "Accept":
+            "application/json,text/plain,*/*",
+        # 'Accept - Encoding':
+        #     'gzip,deflate,br',
+        "Accept - Language":
+            "zh-CN,zh;q=0.9",
+        "Connection":
+            "keep-alive",
+        "Cookie":
+            "_ga=GA1.2.533800640.1633269337;Hm_lvt_cdb524f42f0ce19b169a8071123a4797=1692269257;_gid=GA1.2.2089180419.1692269257;Hm_lpvt_cdb524f42f0ce19b169a8071123a4797=1692278434;_ga_ETPBRPM9ML=GS1.2.1692276476.3.1.1692279083.47.0.0;Hm_Iuvt_cdb524f42f0cer9b268e4v7y734w5esq24=kS7ZPxm3wzGz5KYG2YJFS6A5cfpSGdCD",
+        "Host":
+            "kuwo.cn",
+        # "Sec-Ch-Ua":
+        #     "'Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114'",
+        "Sec-Ch-Ua-Mobile":
+            "?0",
+        "Sec-Ch-Ua-Platform":
+            "Windows",
+        "Referer":
+            "https://kuwo.cn/search/list?key=%E8%96%9B%E4%B9%8B%E8%B0%A6",
+        "Secret":
+            "4bea2891a98349590c8a952adcd256ec28b8765964513079a0237fc06d922b2b013ef8f3",
+        "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+    }
+    params = {
+        "key": name,
+        "pn": "1",
+        "rn": "20",
+        "httpsStatus": "1",
+        # 'reqId': '903c3d80 - 3d02 - 11ee - 9cd5 - 07bf63268c34',
+        "plat": "web_www"
+    }
+    res = requests.get(url=url, params=params, headers=headers)
+    artistid = res.json()['data']['list'][0]['artistid']
+    return artistid
+
+
+# 根据artistid获取mid
+def get_rid_from_artistid(artistid):
+    list = []
+    song_rid_list = []
+    song_name_list = []
+    song_count = '30'
+    url = 'https://kuwo.cn/api/www/artist/artistMusic'
+    url2 = 'https://kuwo.cn/singer_detail/' + str(artistid)
+    headers = {
+        "Accept":
+            "application/json, text/plain, */*",
+        "Accept-Encoding":
+            "gzip, deflate, br",
+        "Accept-Language":
+            "zh-CN,zh;q=0.9",
+        "Connection":
+            "keep-alive",
+        "Cookie":
+            "_ga=GA1.2.533800640.1633269337; Hm_lvt_cdb524f42f0ce19b169a8071123a4797=1692269257; _gid=GA1.2.2089180419.1692269257; Hm_lpvt_cdb524f42f0ce19b169a8071123a4797=1692279171; _gat=1; _ga_ETPBRPM9ML=GS1.2.1692285130.4.1.1692285135.55.0.0; Hm_Iuvt_cdb524f42f0cer9b268e4v7y734w5esq24=4yNiFmTAxYy4PG7TmSEppitrf6Y2ibPZ",
+        "Host":
+            "kuwo.cn",
+        # 'Sec-Ch-Ua':
+        #     '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
+        "Sec-Ch-Ua-Mobile":
+            "?0",
+        "Sec-Ch-Ua-Platform":
+            "Windows",
+        "Secret":
+            "14c051a2bf96702b03a9ab64b9de38ff77b2796f470e053ea57356a14394383504450fd9",
+        "Referer":
+            "https://kuwo.cn/search/list?key=%E8%96%9B%E4%B9%8B%E8%B0%A6",
+        "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+    }
+    headers2 = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36"}
+    res2 = requests.get(url=url2, headers=headers2)
+    page_cont = res2.content
+    tree = etree.HTML(page_cont)
+    # song_count = tree.xpath('/html/body/div/div/div/div[2]/div/div[2]/div[2]/div[2]/div[1]/span[1]/span/text()')[0]
+    minute = int(((int(song_count) / 60) + 1) * 1)
+    # print('大约' + str(minute) + '分钟后开始下载，请耐心等待……')
+    page_count = int(int(song_count) / 20)
+    song_reminder = int(song_count) - (20 * page_count)
+    n = 0
+    if (page_count > 0):
+        for i in range(1, page_count + 2):
+            if (i == page_count + 1):
+                n = song_reminder
+            else:
+                n = 20
+            for j in range(0, n):
+                pn = str(i)
+                print('正在读取第' + str((i - 1) * 20 + (j + 1)) + '首，请等待……')
+                params = {
+                    "artistid": artistid,
+                    "pn": pn,
+                    "rn": "20",
+                    "httpsStatus": "1",
+                    # 'reqId': '7b436710 - 3d10 - 11ee - 9088 - 09dcb687be08',
+                    "plat": "web_www"
+                }
+                # sleep(1)
+                res = requests.get(url=url, params=params, headers=headers)
+                if ((res.json()['code'] != -1) or (res.json()['success'] != 'false')):
+                    rid = res.json()['data']['list'][j]['rid']
+                    name = res.json()['data']['list'][j]['name']
+                else:
+                    rid = 0
+                    name = ''
+                song_rid_list.append(rid)
+                song_name_list.append(name)
+                j += 1
+    else:
+        n = song_reminder
+        for j in range(0, n):
+            params = {
+                "artistid": artistid,
+                "pn": "1",
+                "rn": "20",
+                "httpsStatus": "1",
+                # 'reqId': '7b436710 - 3d10 - 11ee - 9088 - 09dcb687be08',
+                "plat": "web_www"
+            }
+            res = requests.get(url=url, params=params, headers=headers)
+            rid = res.json()['data']['list'][j]['rid']
+            name = res.json()['data']['list'][j]['name']
+            song_rid_list.append(rid)
+            song_name_list.append(name)
+            j += 1
+    list.append(song_rid_list)
+    list.append(song_name_list)
+    return list
+
+
+# 根据rid获取歌曲url
+def get_url_from_rid(rid):
+    url = 'https://kuwo.cn/api/v1/www/music/playUrl'
+    params = {"mid": rid,
+              "type": "music",
+              "httpsStatus": "1",
+              # 'reqId': '03c2e201-3cfd-11ee-a2ca-ed52bec9a944',
+              "plat": "web_www"
+              }
+    headers = {
+        "Accept":
+            "application/json, text/plain, */*",
+        # 'Accept-Encoding':
+        #     'gzip, deflate, br',
+        "Accept-Language":
+            "zh-CN,zh;q=0.9",
+        "Connection":
+            "keep-alive",
+        "Cookie":
+            "_ga=GA1.2.533800640.1633269337; Hm_lvt_cdb524f42f0ce19b169a8071123a4797=1692269257; _gid=GA1.2.2089180419.1692269257; Hm_lpvt_cdb524f42f0ce19b169a8071123a4797=1692276639; _ga_ETPBRPM9ML=GS1.2.1692276476.3.1.1692276639.60.0.0; Hm_Iuvt_cdb524f42f0cer9b268e4v7y734w5esq24=hZweaWMRW3dKPytwfFcEGrZJH2wiASkp",
+        "Host":
+            "kuwo.cn",
+        # "Sec-Ch-Ua":
+        #     '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
+        "Sec-Ch-Ua-Mobile":
+            "?0",
+        "Sec-Ch-Ua-Platform":
+            "Windows",
+        "Secret":
+            "48e368ae98ac69382cc3b61bb9e07bdc7ca75f5a70152b068b7778fa6ba5031f02c27ccc",
+        "Referer":
+            "https://kuwo.cn/search/list?key=%E8%96%9B%E4%B9%8B%E8%B0%A6",
+        "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+    }
+
+    res = requests.get(url=url, params=params, headers=headers)
+    j = res.json()
+    if (j['code'] != -1):
+        song_full_url = res.json()['data']['url']
+        n = song_full_url.index('?')
+        song_url = song_full_url[0:int(n)]
+    else:
+        song_url = ''
+    print(song_url)
+    return song_url
+
+
+def get_url_list(song_rid_list):
+    song_url_list = []
+    for song_rid in song_rid_list:
+        song_url = get_url_from_rid(song_rid)
+        song_url_list.append(song_url)
+    return song_url_list
+
+
+# 检查是否有文件夹，有则清空，无则创建
+def del_file(filepath):
+    if not os.path.exists(filepath):
+        os.mkdir(filepath)
+    del_list = os.listdir(filepath)
+    # for f in del_list:
+    #     file_path = os.path.join(filepath, f)
+    #     if os.path.isfile(file_path):
+    #         os.remove(file_path)
+    #     elif os.path.isdir(file_path):
+    #         shutil.rmtree(file_path)
+
+
+# 根据url下载歌曲
+def download_music_from_url(url, song_name):
+    cont = requests.get(url).content
+    with open(filepath + '//' + song_name + '.mp3', 'wb') as f:
+        f.write(cont)
+    print(song_name + '   已被下载到   ' + filepath)
+
+
+def download_musics_from_urls(url_list, song_name_list):
+    j = 0
+    for i in range(len(url_list)):
+        if (url_list[i] == ''):
+            continue
+        else:
+            download_music_from_url(url_list[i], song_name_list[i])
+        j += 1
+    print('共下载' + str(j) + '首歌曲')
+
+
+if __name__ == '__main__':
+    artistid = get_artistid_from_name(name)
+    song_list = get_rid_from_artistid(artistid)
+    song_rids = song_list[0]
+    song_names = song_list[1]
+    song_urls = get_url_list(song_rids)
+    del_file(filepath)
+    download_musics_from_urls(song_urls, song_names)
